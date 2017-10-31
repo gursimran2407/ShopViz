@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 26
-    buildToolsVersion "26.0.1"
+    buildToolsVersion '26.0.2'
     defaultConfig {
         applicationId "com.gursimran.shopviz"
         minSdkVersion 21
@@ -45,6 +45,10 @@ dependencies {
     compile 'com.google.code.gson:gson:2.3.1'
     compile 'commons-io:commons-io:2.4'
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
+
+    annotationProcessor 'org.apache.logging.log4j:log4j-core:2.2'
+
+
     testCompile 'junit:junit:4.12'
 }
 apply plugin: 'com.google.gms.google-services'

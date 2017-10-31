@@ -1,9 +1,16 @@
 package com.gursimran.shopviz.activity;
 
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Environment;
+import android.provider.MediaStore;
+import android.support.v4.content.FileProvider;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.Manifest;
@@ -18,6 +25,7 @@ import android.view.animation.AnimationUtils;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
 
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.google.firebase.database.DatabaseReference;
@@ -38,12 +46,23 @@ import com.gursimran.shopviz.Util.util;
 import com.gursimran.shopviz.modal.ChatMessage;
 import com.gursimran.shopviz.modal.chat_rec;
 
+import java.io.File;
+
+import static org.apache.logging.log4j.core.impl.ThrowableFormatOptions.FILE_NAME;
+
 public class MainActivity extends AppCompatActivity implements AIListener {
+    private static final int GALLERY_PERMISSIONS_REQUEST = 0;
+    private static final int GALLERY_IMAGE_REQUEST = 1;
+    public static final int CAMERA_PERMISSIONS_REQUEST = 2;
+    public static final int CAMERA_IMAGE_REQUEST = 3;
+    public static final String FILE_NAME = "temp.jpg";
+
+
     RecyclerView recyclerView;
     EditText editText;
-    RelativeLayout addBtn;
+    RelativeLayout addBtn, uploadImage;
     DatabaseReference ref;
-    FirebaseRecyclerAdapter<ChatMessage,chat_rec> adapter;
+    FirebaseRecyclerAdapter<ChatMessage, chat_rec> adapter;
     Boolean flagFab = true;
 
     private AIService aiService;
@@ -53,17 +72,18 @@ public class MainActivity extends AppCompatActivity implements AIListener {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-    intit();
+        intit();
 
     }
 
-    void intit(){
-        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO},1);
+    void intit() {
+        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 1);
 
 //UI
-        recyclerView = (RecyclerView)findViewById(R.id.recyclerView);
-        editText = (EditText)findViewById(R.id.editText);
-        addBtn = (RelativeLayout)findViewById(R.id.addBtn);
+        recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
+        editText = (EditText) findViewById(R.id.editText);
+        addBtn = (RelativeLayout) findViewById(R.id.addBtn);
+        uploadImage = (RelativeLayout) findViewById(R.id.uploadImage);
         recyclerView.setHasFixedSize(true);
         final LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
         linearLayoutManager.setStackFromEnd(true);
@@ -72,16 +92,49 @@ public class MainActivity extends AppCompatActivity implements AIListener {
         ref = FirebaseDatabase.getInstance().getReference();
         ref.keepSynced(true);
 
+        /*
+        * API.AI Configuration
+        * */
         final AIConfiguration config = new AIConfiguration(util.DflowKey,
                 AIConfiguration.SupportedLanguages.English,
                 AIConfiguration.RecognitionEngine.System);
-
+   /*
+        * API.AI Inintializing AIService with the above configuration
+        * */
         aiService = AIService.getService(this, config);
         aiService.setListener(this);
 
         final AIDataService aiDataService = new AIDataService(config);
 
         final AIRequest aiRequest = new AIRequest();
+
+        //UPLOAD IMAGE
+
+        uploadImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder
+                        .setMessage(R.string.dialog_select_prompt)
+                        .setPositiveButton(R.string.dialog_select_gallery, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                startGalleryChooser();
+                            }
+                        })
+                        .setNegativeButton(R.string.dialog_select_camera, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                startCamera();
+                            }
+                        });
+                builder.create().show();
+
+
+
+            }});
         addBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -94,7 +147,7 @@ public class MainActivity extends AppCompatActivity implements AIListener {
                     ref.child("chat").push().setValue(chatMessage); //change chat_user1 to Userid Chat //SENT MESSAGES
 
                     aiRequest.setQuery(message);
-                    new AsyncTask<AIRequest,Void,AIResponse>(){
+                    new AsyncTask<AIRequest, Void, AIResponse>() {
 
                         @Override
                         protected AIResponse doInBackground(AIRequest... aiRequests) {
@@ -106,6 +159,7 @@ public class MainActivity extends AppCompatActivity implements AIListener {
                             }
                             return null;
                         }
+
                         @Override
                         protected void onPostExecute(AIResponse response) {
                             if (response != null) {
@@ -117,8 +171,7 @@ public class MainActivity extends AppCompatActivity implements AIListener {
                             }
                         }
                     }.execute(aiRequest);
-                }
-                else {
+                } else {
                     aiService.startListening();
                 }
 
@@ -135,19 +188,18 @@ public class MainActivity extends AppCompatActivity implements AIListener {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                ImageView fab_img = (ImageView)findViewById(R.id.fab_img); //IMAGE IS BEING CHANGED (MIC TO SEND)
-                Bitmap img = BitmapFactory.decodeResource(getResources(),R.drawable.ic_send_white_24dp);
-                Bitmap img1 = BitmapFactory.decodeResource(getResources(),R.drawable.ic_mic_white_24dp);
+                ImageView fab_img = (ImageView) findViewById(R.id.fab_img); //IMAGE IS BEING CHANGED (MIC TO SEND)
+                Bitmap img = BitmapFactory.decodeResource(getResources(), R.drawable.ic_send_white_24dp);
+                Bitmap img1 = BitmapFactory.decodeResource(getResources(), R.drawable.ic_mic_white_24dp);
 
 
-                if (s.toString().trim().length()!=0 && flagFab){
-                    ImageViewAnimatedChange(MainActivity.this,fab_img,img);
-                    flagFab=false;
+                if (s.toString().trim().length() != 0 && flagFab) {
+                    ImageViewAnimatedChange(MainActivity.this, fab_img, img);
+                    flagFab = false;
 
-                }
-                else if (s.toString().trim().length()==0){
-                    ImageViewAnimatedChange(MainActivity.this,fab_img,img1);
-                    flagFab=true;
+                } else if (s.toString().trim().length() == 0) {
+                    ImageViewAnimatedChange(MainActivity.this, fab_img, img1);
+                    flagFab = true;
 
                 }
 
@@ -162,7 +214,7 @@ public class MainActivity extends AppCompatActivity implements AIListener {
 
 
         //Change ref.child("chat")) to chat_useris to get users chat
-        adapter = new FirebaseRecyclerAdapter<ChatMessage, chat_rec>(ChatMessage.class,R.layout.msglist,chat_rec.class,ref.child("chat")) {
+        adapter = new FirebaseRecyclerAdapter<ChatMessage, chat_rec>(ChatMessage.class, R.layout.msglist, chat_rec.class, ref.child("chat")) {
             @Override
             protected void populateViewHolder(chat_rec viewHolder, ChatMessage model, int position) { //POPULATING THE msglLIST xml file
 
@@ -173,8 +225,7 @@ public class MainActivity extends AppCompatActivity implements AIListener {
 
                     viewHolder.rightText.setVisibility(View.VISIBLE);
                     viewHolder.leftText.setVisibility(View.GONE);
-                }
-                else {
+                } else {
                     viewHolder.leftText.setText(model.getMsgText());
 
                     viewHolder.rightText.setVisibility(View.GONE);
@@ -202,24 +253,38 @@ public class MainActivity extends AppCompatActivity implements AIListener {
         });
 
         recyclerView.setAdapter(adapter);
-
-
     }
+
+
     //BUTTON ANIMATION
+
     public void ImageViewAnimatedChange(Context c, final ImageView v, final Bitmap new_image) {
         final Animation anim_out = AnimationUtils.loadAnimation(c, R.anim.zoom_out);
-        final Animation anim_in  = AnimationUtils.loadAnimation(c, R.anim.zoom_in);
-        anim_out.setAnimationListener(new Animation.AnimationListener()
-        {
-            @Override public void onAnimationStart(Animation animation) {}
-            @Override public void onAnimationRepeat(Animation animation) {}
-            @Override public void onAnimationEnd(Animation animation)
-            {
+        final Animation anim_in = AnimationUtils.loadAnimation(c, R.anim.zoom_in);
+        anim_out.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
                 v.setImageBitmap(new_image);
                 anim_in.setAnimationListener(new Animation.AnimationListener() {
-                    @Override public void onAnimationStart(Animation animation) {}
-                    @Override public void onAnimationRepeat(Animation animation) {}
-                    @Override public void onAnimationEnd(Animation animation) {}
+                    @Override
+                    public void onAnimationStart(Animation animation) {
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animation animation) {
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animation animation) {
+                    }
                 });
                 v.startAnimation(anim_in);
             }
@@ -227,8 +292,33 @@ public class MainActivity extends AppCompatActivity implements AIListener {
         v.startAnimation(anim_out);
     }
 
+    //CAMERA FUNCTIONS
+    public void startGalleryChooser() {
 
-    //GETTING THE RESPONSE FROM SERVER(API.AI) and saving on firebase
+            Intent intent = new Intent();
+            intent.setType("image/*");
+            intent.setAction(Intent.ACTION_GET_CONTENT);
+            startActivityForResult(Intent.createChooser(intent, "Select a photo"), GALLERY_IMAGE_REQUEST);
+
+    }
+
+    public void startCamera() {
+
+            Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            Uri photoUri = FileProvider.getUriForFile(this, getApplicationContext().getPackageName() + ".provider", getCameraFile());
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivityForResult(intent, CAMERA_IMAGE_REQUEST);
+
+    }
+
+    public File getCameraFile() {
+        File dir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        return new File(dir, FILE_NAME);
+    }
+
+
+    //GETTING THE RESPONSE FROM SERVER(API.AI) and saving on firebase https://github.com/dialogflow/dialogflow-android-client
     @Override
     public void onResult(ai.api.model.AIResponse response) {
 
@@ -246,6 +336,7 @@ public class MainActivity extends AppCompatActivity implements AIListener {
 
 
     }
+
     @Override
     public void onError(AIError error) {
 
@@ -272,6 +363,7 @@ public class MainActivity extends AppCompatActivity implements AIListener {
     }
 
 }
+
 
 
 

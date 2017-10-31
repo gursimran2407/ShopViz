@@ -5,13 +5,12 @@ package com.gursimran.shopviz.modal;
  */
 
 public class User {
-    public String UserID;
     public String UserName;
     public String UserEmail;
     public String UserPassword;
 
-    public User(String userID,String userName, String userEmail, String userPassword) {
-        UserID = userID;
+    public User(String userName, String userEmail, String userPassword) {
+
         UserName = userName;
         UserEmail = userEmail;
         UserPassword = userPassword;
