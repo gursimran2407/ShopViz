@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "325194847023",
+    "firebase_url": "https://shopvis-182706.firebaseio.com",
+    "project_id": "shopvis-182706",
+    "storage_bucket": "shopvis-182706.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:325194847023:android:db9b5a9b4ed7c736",
+        "android_client_info": {
+          "package_name": "com.gursimran.shopviz"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "325194847023-gvtnot6eotl2golnqeo008rumfjeaust.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC8POuvk1njANXG1lSQpG8zLfdB9hwdD6A"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
