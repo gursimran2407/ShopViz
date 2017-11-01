@@ -28,6 +28,7 @@ import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -51,18 +52,18 @@ import java.io.File;
 import static org.apache.logging.log4j.core.impl.ThrowableFormatOptions.FILE_NAME;
 
 public class MainActivity extends AppCompatActivity implements AIListener {
-    private static final int GALLERY_PERMISSIONS_REQUEST = 0;
-    private static final int GALLERY_IMAGE_REQUEST = 1;
     public static final int CAMERA_PERMISSIONS_REQUEST = 2;
     public static final int CAMERA_IMAGE_REQUEST = 3;
     public static final String FILE_NAME = "temp.jpg";
-
-
+    private static final int GALLERY_PERMISSIONS_REQUEST = 0;
+    private static final int GALLERY_IMAGE_REQUEST = 1;
     RecyclerView recyclerView;
     EditText editText;
     RelativeLayout addBtn, uploadImage;
     DatabaseReference ref;
     FirebaseRecyclerAdapter<ChatMessage, chat_rec> adapter;
+    FirebaseAuth firebaseAuth;
+    String UserIdFirebase = firebaseAuth.getInstance().getCurrentUser().getUid();
     Boolean flagFab = true;
 
     private AIService aiService;
@@ -71,7 +72,7 @@ public class MainActivity extends AppCompatActivity implements AIListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        Toast.makeText(getApplicationContext(), UserIdFirebase, Toast.LENGTH_LONG).show();
         intit();
 
     }
@@ -143,8 +144,8 @@ public class MainActivity extends AppCompatActivity implements AIListener {
 
                 if (!message.equals("")) {
 
-                    ChatMessage chatMessage = new ChatMessage(message, "user"); //HERE CHANGE USER TO User.getUserName
-                    ref.child("chat").push().setValue(chatMessage); //change chat_user1 to Userid Chat //SENT MESSAGES
+                    ChatMessage chatMessage = new ChatMessage(message, UserIdFirebase); //HERE CHANGE USER TO User.getUserName
+                    ref.child("chat").child(UserIdFirebase).push().setValue(chatMessage); //change chat_user1 to Userid Chat //SENT MESSAGES
 
                     aiRequest.setQuery(message);
                     new AsyncTask<AIRequest, Void, AIResponse>() {
@@ -167,7 +168,7 @@ public class MainActivity extends AppCompatActivity implements AIListener {
                                 Result result = response.getResult();
                                 String reply = result.getFulfillment().getSpeech();
                                 ChatMessage chatMessage = new ChatMessage(reply, "bot");
-                                ref.child("chat").push().setValue(chatMessage);  //RESPONSE FROM DIALOGUEFLOW
+                                ref.child("chat").child(UserIdFirebase).push().setValue(chatMessage);  //RESPONSE FROM DIALOGUEFLOW
                             }
                         }
                     }.execute(aiRequest);
@@ -213,12 +214,12 @@ public class MainActivity extends AppCompatActivity implements AIListener {
         });
 
 
-        //Change ref.child("chat")) to chat_useris to get users chat
-        adapter = new FirebaseRecyclerAdapter<ChatMessage, chat_rec>(ChatMessage.class, R.layout.msglist, chat_rec.class, ref.child("chat")) {
+        //Change ref.child("chat")) to chat_userid to get users chat
+        adapter = new FirebaseRecyclerAdapter<ChatMessage, chat_rec>(ChatMessage.class, R.layout.msglist, chat_rec.class, ref.child("chat").child(UserIdFirebase)) {
             @Override
             protected void populateViewHolder(chat_rec viewHolder, ChatMessage model, int position) { //POPULATING THE msglLIST xml file
 
-                if (model.getMsgUser().equals("user")) { //STRING>contains user
+                if (model.getMsgUser().equals(UserIdFirebase)) { //STRING>contains user
 
 
                     viewHolder.rightText.setText(model.getMsgText());
