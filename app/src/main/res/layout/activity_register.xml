@@ -4,15 +4,16 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:layout_centerHorizontal="true"
     android:layout_centerVertical="true"
+    android:background="@color/colorPrimary"
+    android:orientation="vertical"
     tools:context="com.gursimran.shopviz.activity.RegisterActivity">
     <android.support.v7.widget.Toolbar
+        android:id="@+id/myToolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="#000"
-        android:id="@+id/myToolbar"
         android:titleTextColor="#fff"
         app:theme="@style/ThemeOverlay.AppCompat.Dark">
     </android.support.v7.widget.Toolbar>
@@ -38,95 +39,95 @@
         android:id="@+id/editTextEmail"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:ems="10"
         android:layout_gravity="center"
-        android:inputType="textEmailAddress"
-        android:textColorHint="#fff"
-        android:hint="Email"
-        android:textSize="20dp"
-        android:textColor="#fff"
-        android:padding="8dp"
+        android:layout_marginBottom="10dp"
         android:layout_marginLeft="15dp"
         android:layout_marginRight="15dp"
-        android:layout_marginBottom="10dp"/>
+        android:ems="10"
+        android:hint="Email"
+        android:inputType="textEmailAddress"
+        android:padding="8dp"
+        android:textColor="#fff"
+        android:textColorHint="#fff"
+        android:textSize="20dp" />
        <!-- android:background="@drawable/loginedittextstyle"-->
 
     <EditText
         android:id="@+id/editTextMobileNo"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:ems="10"
         android:layout_gravity="center"
-        android:textColorHint="#fff"
-        android:inputType="phone"
-        android:hint="Mobile No."
-        android:textSize="20dp"
-        android:textColor="#fff"
-        android:padding="8dp"
+        android:layout_marginBottom="10dp"
         android:layout_marginLeft="15dp"
         android:layout_marginRight="15dp"
-        android:layout_marginBottom="10dp"/>
+        android:ems="10"
+        android:hint="Mobile No."
+        android:inputType="phone"
+        android:padding="8dp"
+        android:textColor="#fff"
+        android:textColorHint="#fff"
+        android:textSize="20dp" />
 
     <EditText
         android:id="@+id/editTextPassword"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:ems="10"
         android:layout_gravity="center"
-        android:textColorHint="#fff"
-        android:inputType="textPassword"
-        android:hint="Password"
-        android:textSize="20dp"
-        android:textColor="#fff"
-        android:padding="8dp"
+        android:layout_marginBottom="10dp"
         android:layout_marginLeft="15dp"
         android:layout_marginRight="15dp"
-        android:layout_marginBottom="10dp"/>
+        android:ems="10"
+        android:hint="Password"
+        android:inputType="textPassword"
+        android:padding="8dp"
+        android:textColor="#fff"
+        android:textColorHint="#fff"
+        android:textSize="20dp" />
 
     <TextView
         android:id="@+id/textViewGender"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:textColorHint="#fff"
-        android:text="Gender"
-        android:textSize="20dp"
-        android:textColor="#fff"
-        android:padding="8dp"
-        android:layout_marginTop="2dp"
         android:layout_marginLeft="15dp"
-        android:layout_marginRight="15dp"/>
+        android:layout_marginRight="15dp"
+        android:layout_marginTop="2dp"
+        android:padding="8dp"
+        android:text="Gender"
+        android:textColor="#fff"
+        android:textColorHint="#fff"
+        android:textSize="20dp" />
 
     <RadioGroup
         android:id="@+id/RadioGroupGender"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:textColorHint="#fff"
-        android:textSize="20dp"
-        android:textColor="#fff"
-        android:padding="8dp"
         android:layout_marginBottom="10dp"
         android:layout_marginLeft="15dp"
         android:layout_marginRight="15dp"
-        android:backgroundTint="#fff">
+        android:backgroundTint="#fff"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        android:textColor="#fff"
+        android:textColorHint="#fff"
+        android:textSize="20dp">
 
         <RadioButton
             android:id="@+id/radioButtonMale"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginRight="30dp"
+            android:buttonTint="#fff"
             android:text="Male"
-            android:textColor="#fff"
-            android:buttonTint="#fff"/>
+            android:textColor="#fff" />
 
         <RadioButton
             android:id="@+id/radioButtonFemale"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:buttonTint="#fff"
             android:text="Female"
-            android:textColor="#fff"
-            android:buttonTint="#fff"/>
+            android:textColor="#fff" />
 
     </RadioGroup>
 
@@ -143,13 +144,14 @@
         android:id="@+id/buttonRegister"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginLeft="15dp"
+        android:layout_marginRight="15dp"
+        android:layout_marginTop="20dp"
         android:text="@string/signup"
         android:textColor="#fff"
-        android:layout_marginTop="20dp"
         android:textSize="20sp"
-        android:textStyle="bold"
-        android:layout_marginLeft="15dp"
-        android:layout_marginRight="15dp" />
+        android:textStyle="bold" />
+
 </LinearLayout>
 
 

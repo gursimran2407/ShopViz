@@ -13,7 +13,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.Spinner;
+//import android.widget.Spinner;
 import android.widget.Toast;
 import com.gursimran.shopviz.R;
 
@@ -28,21 +28,20 @@ import com.gursimran.shopviz.modal.User;
 
 public class RegisterActivity extends AppCompatActivity implements View.OnClickListener
 {
-    EditText etName, etEmail, etMobileNo, etPassword, etAddress;
+    EditText etName, etEmail, etMobileNo, etPassword;
     RadioButton rbMale, rbFemale;
     RadioGroup rgGender;
-    Spinner spCity;
+    //Spinner spCity;
     Button btnRegister;
     //ArrayAdapter<String> adapterCity;
 
     ProgressDialog pd;
     FirebaseAuth firebaseAuth;
-    private DatabaseReference databaseReference;
     String email, password;
-    String name, mobile, gender, address, city;
-
+    String name, mobile, gender;
+    User user;
     Toolbar toolbar;
-    User user = new User();
+    private DatabaseReference databaseReference;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -52,7 +51,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 
         toolbar = findViewById(R.id.myToolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setTitle(" ShopViz");
+        getSupportActionBar().setTitle("ShopViz");
         getSupportActionBar().setIcon(R.mipmap.onlineshopviz);
 
         /*ActionBar actionBar = getSupportActionBar();
@@ -63,15 +62,15 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
         actionBar.setDisplayUseLogoEnabled(true);
 */
 
-        etName = (EditText) findViewById(R.id.editTextName);
-        etEmail = (EditText) findViewById(R.id.editTextEmail);
-        etMobileNo = (EditText) findViewById(R.id.editTextMobileNo);
-        etPassword = (EditText) findViewById(R.id.editTextPassword);
-        //etAddress = (EditText) findViewById(R.id.editTextAddress);
+        etName = findViewById(R.id.editTextName);
+        etEmail = findViewById(R.id.editTextEmail);
+        etMobileNo = findViewById(R.id.editTextMobileNo);
+        etPassword = findViewById(R.id.editTextPassword);
+        //etAddress = () findViewById(R.id.editTextAddress);
 
-        rgGender = (RadioGroup) findViewById(R.id.RadioGroupGender);
-        rbMale = (RadioButton) findViewById(R.id.radioButtonMale);
-        rbFemale = (RadioButton) findViewById(R.id.radioButtonFemale);
+        rgGender = findViewById(R.id.RadioGroupGender);
+        rbMale = findViewById(R.id.radioButtonMale);
+        rbFemale = findViewById(R.id.radioButtonFemale);
 
 //        spCity = (Spinner) findViewById(R.id.spinnerCity);
 //        adapterCity=new ArrayAdapter<String>(this,android.R.layout.simple_spinner_dropdown_item);
@@ -91,7 +90,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
         databaseReference = FirebaseDatabase.getInstance().getReference();
 
 
-        btnRegister = (Button) findViewById(R.id.buttonRegister);
+        btnRegister = findViewById(R.id.buttonRegister);
         btnRegister.setOnClickListener(this);
     }
 
@@ -154,15 +153,12 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
             } else {
                 gender = rbFemale.getText().toString();
             }
-            address = etAddress.getText().toString().trim();
-            city = spCity.getSelectedItem().toString();
+            //  address = etAddress.getText().toString().trim();
+            //city = spCity.getSelectedItem().toString();
 
-            user.setUserName(name);
-            user.setUserEmail(email);
-            user.setUserPhone(mobile);
-            user.setGender(gender);
+            user = new User(name, email, password, mobile, gender);
 
-            //Toast.makeText(this, "name "+name + "email "+ email+" mobile "+mobile+" pass "+password+" gender "+ gender+" add "+ address+" cit"+ city, Toast.LENGTH_LONG).show();
+            //Toast.makeText(this, "name "+name + "email "+ email+" mobile "+mobile+" pass "+password+" gender "+ gender+" add ", Toast.LENGTH_LONG).show();
 
 
             firebaseAuth.createUserWithEmailAndPassword(email, password).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
