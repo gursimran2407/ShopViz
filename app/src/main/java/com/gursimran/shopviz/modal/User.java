@@ -8,12 +8,16 @@ public class User {
     public String UserName;
     public String UserEmail;
     public String UserPassword;
+    public String UserPhone;
+    public String Gender;
 
-    public User(String userName, String userEmail, String userPassword) {
+    public User(String userName, String userEmail, String userPassword,String phone, String gender) {
 
         UserName = userName;
         UserEmail = userEmail;
         UserPassword = userPassword;
+        UserPhone = phone;
+        Gender = gender;
     }
     public User(){
 
@@ -43,4 +47,19 @@ public class User {
         UserPassword = userPassword;
     }
 
+    public String getUserPhone() {
+        return UserPhone;
+    }
+
+    public void setUserPhone(String userPhone) {
+        UserPhone = userPhone;
+    }
+
+    public String getGender() {
+        return Gender;
+    }
+
+    public void setGender(String gender) {
+        Gender = gender;
+    }
 }
