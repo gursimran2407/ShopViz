@@ -9,6 +9,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -19,6 +20,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
@@ -43,18 +45,19 @@ import ai.api.model.AIResponse;
 import ai.api.model.Result;
 
 import com.gursimran.shopviz.R;
+import com.gursimran.shopviz.Util.PermissionUtils;
 import com.gursimran.shopviz.Util.util;
 import com.gursimran.shopviz.modal.ChatMessage;
 import com.gursimran.shopviz.modal.chat_rec;
 
 import java.io.File;
-
-import static org.apache.logging.log4j.core.impl.ThrowableFormatOptions.FILE_NAME;
+import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity implements AIListener {
+    public static final String FILE_NAME = "temp.jpg";
     public static final int CAMERA_PERMISSIONS_REQUEST = 2;
     public static final int CAMERA_IMAGE_REQUEST = 3;
-    public static final String FILE_NAME = "temp.jpg";
+    private static final String TAG = MainActivity.class.getSimpleName();
     private static final int GALLERY_PERMISSIONS_REQUEST = 0;
     private static final int GALLERY_IMAGE_REQUEST = 1;
     RecyclerView recyclerView;
@@ -62,8 +65,7 @@ public class MainActivity extends AppCompatActivity implements AIListener {
     RelativeLayout addBtn, uploadImage;
     DatabaseReference ref;
     FirebaseRecyclerAdapter<ChatMessage, chat_rec> adapter;
-    FirebaseAuth firebaseAuth;
-    String UserIdFirebase = firebaseAuth.getInstance().getCurrentUser().getUid();
+    String UserIdFirebase = FirebaseAuth.getInstance().getCurrentUser().getUid();
     Boolean flagFab = true;
 
     private AIService aiService;
@@ -72,19 +74,20 @@ public class MainActivity extends AppCompatActivity implements AIListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        //Toast.makeText(getApplicationContext(), UserIdFirebase, Toast.LENGTH_LONG).show();
+        Toast.makeText(getApplicationContext(), UserIdFirebase, Toast.LENGTH_LONG).show();
         intit();
 
     }
 
     void intit() {
+
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 1);
 
 //UI
-        recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
-        editText = (EditText) findViewById(R.id.editText);
-        addBtn = (RelativeLayout) findViewById(R.id.addBtn);
-        uploadImage = (RelativeLayout) findViewById(R.id.uploadImage);
+        recyclerView = findViewById(R.id.recyclerView);
+        editText = findViewById(R.id.editText);
+        addBtn = findViewById(R.id.addBtn);
+        uploadImage = findViewById(R.id.uploadImage);
         recyclerView.setHasFixedSize(true);
         final LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
         linearLayoutManager.setStackFromEnd(true);
@@ -293,24 +296,38 @@ public class MainActivity extends AppCompatActivity implements AIListener {
         v.startAnimation(anim_out);
     }
 
+    /*
+    * CAMERA FUNCTIONALITY
+    *
+    * ///////////////////////////////////////
+    * ///////////////////////////////////////
+    * ///////////////////////////////////////
+    *
+    *
+    * */
     //CAMERA FUNCTIONS
     public void startGalleryChooser() {
-
+        if (PermissionUtils.requestPermission(this, GALLERY_PERMISSIONS_REQUEST, Manifest.permission.READ_EXTERNAL_STORAGE)) {
             Intent intent = new Intent();
             intent.setType("image/*");
             intent.setAction(Intent.ACTION_GET_CONTENT);
-            startActivityForResult(Intent.createChooser(intent, "Select a photo"), GALLERY_IMAGE_REQUEST);
-
+            startActivityForResult(Intent.createChooser(intent, "Select a photo"),
+                    GALLERY_IMAGE_REQUEST);
+        }
     }
 
     public void startCamera() {
-
+        if (PermissionUtils.requestPermission(
+                this,
+                CAMERA_PERMISSIONS_REQUEST,
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.CAMERA)) {
             Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             Uri photoUri = FileProvider.getUriForFile(this, getApplicationContext().getPackageName() + ".provider", getCameraFile());
             intent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            startActivityForResult(intent, CAMERA_IMAGE_REQUEST);
-
+            startActivityForResult(intent, CAMERA_IMAGE_REQUEST); //ACTIVITY gallery chooser started to get  photo not onActivityREsult is called
+        }
     }
 
     public File getCameraFile() {
@@ -318,7 +335,78 @@ public class MainActivity extends AppCompatActivity implements AIListener {
         return new File(dir, FILE_NAME);
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
 
+        if (requestCode == GALLERY_IMAGE_REQUEST && resultCode == RESULT_OK && data != null) {
+            uploadImage(data.getData());
+        } else if (requestCode == CAMERA_IMAGE_REQUEST && resultCode == RESULT_OK) {
+            Uri photoUri = FileProvider.getUriForFile(this, getApplicationContext().getPackageName() + ".provider", getCameraFile());
+            uploadImage(photoUri);
+        }
+    }
+
+    public void uploadImage(Uri uri) {
+        if (uri != null) {
+            try {
+                // scale the image to save on bandwidth
+                Bitmap bitmap =
+                        scaleBitmapDown(
+                                MediaStore.Images.Media.getBitmap(getContentResolver(), uri),
+                                1200);
+
+                callFirebaseStorageAndCloudSight(bitmap);
+                // mMainImage.setImageBitmap(bitmap); SETTING IMAGE ON TEXT VIEW!!
+
+            } catch (IOException e) {
+                Log.d(TAG, "Image picking failed because " + e.getMessage());
+                Toast.makeText(this, R.string.image_picker_error, Toast.LENGTH_LONG).show();
+            }
+        } else {
+            Log.d(TAG, "Image picker gave us a null image.");
+            Toast.makeText(this, R.string.image_picker_error, Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void callFirebaseStorageAndCloudSight(final Bitmap bitmap) throws IOException {
+        // Switch text to loading
+
+        //mImageDetails.setText(R.string.loading_message); TEXT VIEW IMAGE
+        Toast.makeText(getApplicationContext(), "Firebase Storage Called", Toast.LENGTH_LONG).show();
+        // Do the real work in an async task, because we need to use the network anyway
+
+    }
+
+    public Bitmap scaleBitmapDown(Bitmap bitmap, int maxDimension) {
+
+        int originalWidth = bitmap.getWidth();
+        int originalHeight = bitmap.getHeight();
+        int resizedWidth = maxDimension;
+        int resizedHeight = maxDimension;
+
+        if (originalHeight > originalWidth) {
+            resizedHeight = maxDimension;
+            resizedWidth = (int) (resizedHeight * (float) originalWidth / (float) originalHeight);
+        } else if (originalWidth > originalHeight) {
+            resizedWidth = maxDimension;
+            resizedHeight = (int) (resizedWidth * (float) originalHeight / (float) originalWidth);
+        } else if (originalHeight == originalWidth) {
+            resizedHeight = maxDimension;
+            resizedWidth = maxDimension;
+        }
+        return Bitmap.createScaledBitmap(bitmap, resizedWidth, resizedHeight, false);
+    }
+
+    /*CAMERA FUNCTIONALITY OVER
+    *
+    *
+    *
+    * ///////////////////////////
+    *
+    *
+    * */
+//RESPONSE FOR RECORDING
     //GETTING THE RESPONSE FROM SERVER(API.AI) and saving on firebase https://github.com/dialogflow/dialogflow-android-client
     @Override
     public void onResult(ai.api.model.AIResponse response) {
@@ -327,13 +415,13 @@ public class MainActivity extends AppCompatActivity implements AIListener {
         Result result = response.getResult();
 
         String message = result.getResolvedQuery();
-        ChatMessage chatMessage0 = new ChatMessage(message, "user");
-        ref.child("chat").push().setValue(chatMessage0);
+        ChatMessage chatMessage0 = new ChatMessage(message, UserIdFirebase);
+        ref.child("chat").child(UserIdFirebase).push().setValue(chatMessage0);
 
 
         String reply = result.getFulfillment().getSpeech();
         ChatMessage chatMessage = new ChatMessage(reply, "bot");
-        ref.child("chat").push().setValue(chatMessage);
+        ref.child("chat").child(UserIdFirebase).push().setValue(chatMessage);
 
 
     }
@@ -363,6 +451,23 @@ public class MainActivity extends AppCompatActivity implements AIListener {
 
     }
 
+    @Override
+    public void onRequestPermissionsResult(
+            int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode) {
+            case CAMERA_PERMISSIONS_REQUEST:
+                if (PermissionUtils.permissionGranted(requestCode, CAMERA_PERMISSIONS_REQUEST, grantResults)) {
+                    startCamera();
+                }
+                break;
+            case GALLERY_PERMISSIONS_REQUEST:
+                if (PermissionUtils.permissionGranted(requestCode, GALLERY_PERMISSIONS_REQUEST, grantResults)) {
+                    startGalleryChooser();
+                }
+                break;
+        }
+    }
 }
 
 
