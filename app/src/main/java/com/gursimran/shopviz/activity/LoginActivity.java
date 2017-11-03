@@ -30,11 +30,9 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     Button btnLogin;
 
     FirebaseAuth firebaseAuth;
-    private String email, password;
-
     ProgressDialog pd;
-
     Toolbar toolbar;
+    private String email, password;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -46,7 +44,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         toolbar = findViewById(R.id.myToolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setTitle("ShopViz");
-        getSupportActionBar().setIcon(R.mipmap.onlineshopviz);
+        //getSupportActionBar().setIcon(R.mipmap.onlineshopviz);
 
         firebaseAuth = FirebaseAuth.getInstance();
 

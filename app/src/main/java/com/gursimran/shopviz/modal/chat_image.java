@@ -1,6 +1,5 @@
 package com.gursimran.shopviz.modal;
 
-
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.ImageView;
@@ -8,29 +7,18 @@ import android.widget.TextView;
 
 import com.gursimran.shopviz.R;
 
+/**
+ * Created by gursimransingh on 03/11/17.
+ */
 
-public class chat_rec extends RecyclerView.ViewHolder  {
-
-
-
-    public TextView leftText;
-    public TextView rightText;
+public class chat_image extends RecyclerView.ViewHolder {
 
     public ImageView leftImage;
     public ImageView rightImage;
 
-
-
-    public chat_rec(View itemView){
+    public chat_image(View itemView) {
         super(itemView);
-
-        leftText = (TextView)itemView.findViewById(R.id.leftText);
-        rightText = (TextView)itemView.findViewById(R.id.rightText);
-
         leftImage = itemView.findViewById(R.id.leftImage);
         rightImage = itemView.findViewById(R.id.rightImage);
-
-
-
     }
 }

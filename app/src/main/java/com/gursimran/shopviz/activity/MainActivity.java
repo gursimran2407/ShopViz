@@ -1,10 +1,12 @@
 package com.gursimran.shopviz.activity;
 
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.Image;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Environment;
@@ -30,6 +32,8 @@ import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
@@ -44,14 +48,21 @@ import ai.api.model.AIRequest;
 import ai.api.model.AIResponse;
 import ai.api.model.Result;
 
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 import com.gursimran.shopviz.R;
 import com.gursimran.shopviz.Util.PermissionUtils;
 import com.gursimran.shopviz.Util.util;
 import com.gursimran.shopviz.modal.ChatMessage;
 import com.gursimran.shopviz.modal.chat_rec;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class MainActivity extends AppCompatActivity implements AIListener {
     public static final String FILE_NAME = "temp.jpg";
@@ -74,7 +85,7 @@ public class MainActivity extends AppCompatActivity implements AIListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toast.makeText(getApplicationContext(), UserIdFirebase, Toast.LENGTH_LONG).show();
+        //Toast.makeText(getApplicationContext(), UserIdFirebase, Toast.LENGTH_LONG).show();
         intit();
 
     }
@@ -325,7 +336,7 @@ public class MainActivity extends AppCompatActivity implements AIListener {
             Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             Uri photoUri = FileProvider.getUriForFile(this, getApplicationContext().getPackageName() + ".provider", getCameraFile());
             intent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);//Adding permissions to intent https://developer.android.com/reference/android/support/v4/content/FileProvider.html
             startActivityForResult(intent, CAMERA_IMAGE_REQUEST); //ACTIVITY gallery chooser started to get  photo not onActivityREsult is called
         }
     }
@@ -333,6 +344,24 @@ public class MainActivity extends AppCompatActivity implements AIListener {
     public File getCameraFile() {
         File dir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
         return new File(dir, FILE_NAME);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(
+            int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode) {
+            case CAMERA_PERMISSIONS_REQUEST:
+                if (PermissionUtils.permissionGranted(requestCode, CAMERA_PERMISSIONS_REQUEST, grantResults)) {
+                    startCamera();
+                }
+                break;
+            case GALLERY_PERMISSIONS_REQUEST:
+                if (PermissionUtils.permissionGranted(requestCode, GALLERY_PERMISSIONS_REQUEST, grantResults)) {
+                    startGalleryChooser();
+                }
+                break;
+        }
     }
 
     @Override
@@ -344,6 +373,8 @@ public class MainActivity extends AppCompatActivity implements AIListener {
         } else if (requestCode == CAMERA_IMAGE_REQUEST && resultCode == RESULT_OK) {
             Uri photoUri = FileProvider.getUriForFile(this, getApplicationContext().getPackageName() + ".provider", getCameraFile());
             uploadImage(photoUri);
+            // Log.d(TAG, "URI PHOTO*********** "+photoUri);
+
         }
     }
 
@@ -370,11 +401,72 @@ public class MainActivity extends AppCompatActivity implements AIListener {
     }
 
     private void callFirebaseStorageAndCloudSight(final Bitmap bitmap) throws IOException {
-        // Switch text to loading
 
-        //mImageDetails.setText(R.string.loading_message); TEXT VIEW IMAGE
-        Toast.makeText(getApplicationContext(), "Firebase Storage Called", Toast.LENGTH_LONG).show();
         // Do the real work in an async task, because we need to use the network anyway
+        new AsyncTask<Void, Void, Void>() {
+            ProgressDialog dialog;
+
+            protected void onPreExecute() {
+                super.onPreExecute();
+                dialog = new ProgressDialog(MainActivity.this);
+                Log.d(TAG, "onPreExecute: PREEXECUTOIN");
+                dialog.setMessage("Upoading...");
+                dialog.setCancelable(false);
+                dialog.show();
+            }
+
+            @Override
+            protected Void doInBackground(Void... voids) {
+                FirebaseStorage storage = FirebaseStorage.getInstance();
+                StorageReference storageReference = storage.getReference();
+                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy-hh-mm-ss");
+                String format = simpleDateFormat.format(new Date());
+                StorageReference imagesReference = storageReference.child("images/" + UserIdFirebase + "/" + format);
+                // Switch text to loading
+
+                //mImageDetails.setText(R.string.loading_message); TEXT VIEW IMAGE
+                // Toast.makeText(getApplicationContext(), "Firebase Storage Called", Toast.LENGTH_LONG).show();
+
+
+                // Convert the bitmap to a JPEG
+                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
+                byte[] imageBytes = byteArrayOutputStream.toByteArray();
+
+                //Uploading File to Firebase
+                UploadTask uploadTask = imagesReference.putBytes(imageBytes);
+                uploadTask.addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception exception) {
+                        // Handle unsuccessful uploads
+                    }
+                }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+
+                        // taskSnapshot.getMetadata() contains file metadata such as size, content-type, and download URL.
+                        Uri downloadUrl = taskSnapshot.getDownloadUrl();
+                        Toast.makeText(getApplicationContext(), "Image Uploaded " + downloadUrl, Toast.LENGTH_SHORT).show();
+                    }
+
+
+                });
+
+                return null;
+            }
+
+            protected void onPostExecute(Void result) {
+                super.onPostExecute(result);
+
+                Log.d(TAG, "onPostExecute: POSTEXECUTE");
+
+                if (dialog != null) {
+                    dialog.dismiss();
+                }
+
+
+            }
+        }.execute();
 
     }
 
@@ -451,23 +543,7 @@ public class MainActivity extends AppCompatActivity implements AIListener {
 
     }
 
-    @Override
-    public void onRequestPermissionsResult(
-            int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        switch (requestCode) {
-            case CAMERA_PERMISSIONS_REQUEST:
-                if (PermissionUtils.permissionGranted(requestCode, CAMERA_PERMISSIONS_REQUEST, grantResults)) {
-                    startCamera();
-                }
-                break;
-            case GALLERY_PERMISSIONS_REQUEST:
-                if (PermissionUtils.permissionGranted(requestCode, GALLERY_PERMISSIONS_REQUEST, grantResults)) {
-                    startGalleryChooser();
-                }
-                break;
-        }
-    }
+
 }
 
 
