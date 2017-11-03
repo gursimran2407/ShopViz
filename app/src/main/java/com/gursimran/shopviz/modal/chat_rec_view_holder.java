@@ -9,7 +9,7 @@ import android.widget.TextView;
 import com.gursimran.shopviz.R;
 
 
-public class chat_rec extends RecyclerView.ViewHolder  {
+public class chat_rec_view_holder extends RecyclerView.ViewHolder {
 
 
 
@@ -20,14 +20,13 @@ public class chat_rec extends RecyclerView.ViewHolder  {
     public ImageView rightImage;
 
 
-
-    public chat_rec(View itemView){
+    public chat_rec_view_holder(View itemView) {
         super(itemView);
 
         leftText = (TextView)itemView.findViewById(R.id.leftText);
         rightText = (TextView)itemView.findViewById(R.id.rightText);
 
-        leftImage = itemView.findViewById(R.id.leftImage);
+        // leftImage = itemView.findViewById(R.id.leftImage);
         rightImage = itemView.findViewById(R.id.rightImage);
 
 

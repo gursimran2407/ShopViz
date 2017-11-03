@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.Image;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Environment;
@@ -54,7 +55,8 @@ import com.gursimran.shopviz.R;
 import com.gursimran.shopviz.Util.PermissionUtils;
 import com.gursimran.shopviz.Util.util;
 import com.gursimran.shopviz.modal.ChatMessage;
-import com.gursimran.shopviz.modal.chat_rec;
+import com.gursimran.shopviz.modal.chat_rec_view_holder;
+import com.squareup.picasso.Picasso;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -72,8 +74,9 @@ public class MainActivity extends AppCompatActivity implements AIListener {
     RecyclerView recyclerView;
     EditText editText;
     RelativeLayout addBtn, uploadImage;
+    ImageView uploadedChatImage;
     DatabaseReference FirebaseDatabaseref;
-    FirebaseRecyclerAdapter<ChatMessage, chat_rec> adapter;
+    FirebaseRecyclerAdapter<ChatMessage, chat_rec_view_holder> adapter;
     String UserIdFirebase = FirebaseAuth.getInstance().getCurrentUser().getUid();
     Boolean flagFab = true;
 
@@ -227,22 +230,41 @@ public class MainActivity extends AppCompatActivity implements AIListener {
 
 //DISPLAYING USERS CHAT ON THE TEXT VIEWS
         //Change ref.child("chat")) to chat_userid to get users chat
-        adapter = new FirebaseRecyclerAdapter<ChatMessage, chat_rec>(ChatMessage.class, R.layout.msglist, chat_rec.class, FirebaseDatabaseref.child("chat").child(UserIdFirebase)) {
+        adapter = new FirebaseRecyclerAdapter<ChatMessage, chat_rec_view_holder>(ChatMessage.class, R.layout.msglist, chat_rec_view_holder.class, FirebaseDatabaseref.child("chat").child(UserIdFirebase)) {
             @Override
-            protected void populateViewHolder(chat_rec viewHolder, ChatMessage model, int position) { //POPULATING THE msglLIST xml file
+            protected void populateViewHolder(chat_rec_view_holder viewHolder, ChatMessage model, int position) { //POPULATING THE msglLIST xml file
 
                 if (model.getMsgUser().equals(UserIdFirebase)) { //STRING>contains user
+                    try {
+                        if (!model.getMsgText().equals("")) {
+
+                            if (model.getMsgText().startsWith("https://firebasestorage.googleapis.com/")) {
+                                Picasso.with(getApplicationContext()).load(Uri.parse(model.getMsgText())).into(viewHolder.rightImage);
+                                //viewHolder.rightImage.setImageURI(Uri.parse(model.getMsgText()));
+                                viewHolder.rightText.setVisibility(View.GONE);
+                                viewHolder.leftText.setVisibility(View.GONE);
+                                viewHolder.rightImage.setVisibility(View.VISIBLE);
+                            } else {
+                                viewHolder.rightText.setText(model.getMsgText());
+
+                                viewHolder.rightText.setVisibility(View.VISIBLE);
+                                viewHolder.leftText.setVisibility(View.GONE);
+                                viewHolder.rightImage.setVisibility(View.GONE);
+                            }
+
+                        }
+                    } catch (Exception e) {
+                        Log.d(TAG, "populateViewHolder: Exception" + e);
+                    }
 
 
-                    viewHolder.rightText.setText(model.getMsgText());
-
-                    viewHolder.rightText.setVisibility(View.VISIBLE);
-                    viewHolder.leftText.setVisibility(View.GONE);
-                } else {
+                } else { //BOT ELSE
                     viewHolder.leftText.setText(model.getMsgText());
 
                     viewHolder.rightText.setVisibility(View.GONE);
                     viewHolder.leftText.setVisibility(View.VISIBLE);
+                    viewHolder.rightImage.setVisibility(View.GONE);
+
                 }
             }
         };

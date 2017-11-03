@@ -50,6 +50,7 @@ dependencies {
     compile 'commons-io:commons-io:2.4'
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
     compile 'com.facebook.shimmer:shimmer:0.1.0@aar'
+    compile 'com.squareup.picasso:picasso:2.5.2'
 
     annotationProcessor 'org.apache.logging.log4j:log4j-core:2.2'
 
