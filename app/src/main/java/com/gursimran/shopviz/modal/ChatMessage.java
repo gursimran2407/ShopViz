@@ -7,11 +7,6 @@ public class ChatMessage {
 
     private String msgText;
     private String msgUser;
-    private String imgUser;
-
-
-
-
     public ChatMessage(String msgText, String msgUser){
         this.msgText = msgText;
         this.msgUser = msgUser;
@@ -19,10 +14,6 @@ public class ChatMessage {
 
     }
 
-    public ChatMessage(String imgUser) {
-        this.imgUser = imgUser;
-        this.msgUser = FirebaseAuth.getInstance().getCurrentUser().getUid();
-    }
 
     public ChatMessage(){
 
@@ -44,11 +35,4 @@ public class ChatMessage {
         this.msgUser = msgUser;
     }
 
-    public String getImgUser() {
-        return imgUser;
-    }
-
-    public void setImgUser(String imgUser) {
-        this.imgUser = imgUser;
-    }
 }

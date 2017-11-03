@@ -6,7 +6,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.media.Image;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Environment;
@@ -60,7 +59,6 @@ import com.gursimran.shopviz.modal.chat_rec;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -74,7 +72,7 @@ public class MainActivity extends AppCompatActivity implements AIListener {
     RecyclerView recyclerView;
     EditText editText;
     RelativeLayout addBtn, uploadImage;
-    DatabaseReference ref;
+    DatabaseReference FirebaseDatabaseref;
     FirebaseRecyclerAdapter<ChatMessage, chat_rec> adapter;
     String UserIdFirebase = FirebaseAuth.getInstance().getCurrentUser().getUid();
     Boolean flagFab = true;
@@ -104,8 +102,8 @@ public class MainActivity extends AppCompatActivity implements AIListener {
         linearLayoutManager.setStackFromEnd(true);
         recyclerView.setLayoutManager(linearLayoutManager);
 
-        ref = FirebaseDatabase.getInstance().getReference();
-        ref.keepSynced(true);
+        FirebaseDatabaseref = FirebaseDatabase.getInstance().getReference();
+        FirebaseDatabaseref.keepSynced(true);
 
         /*
         * API.AI Configuration
@@ -159,7 +157,7 @@ public class MainActivity extends AppCompatActivity implements AIListener {
                 if (!message.equals("")) {
 
                     ChatMessage chatMessage = new ChatMessage(message, UserIdFirebase); //HERE CHANGE USER TO User.getUserName
-                    ref.child("chat").child(UserIdFirebase).push().setValue(chatMessage); //change chat_user1 to Userid Chat //SENT MESSAGES
+                    FirebaseDatabaseref.child("chat").child(UserIdFirebase).push().setValue(chatMessage); //change chat_user1 to Userid Chat //SENT MESSAGES
 
                     aiRequest.setQuery(message);
                     new AsyncTask<AIRequest, Void, AIResponse>() {
@@ -182,7 +180,7 @@ public class MainActivity extends AppCompatActivity implements AIListener {
                                 Result result = response.getResult();
                                 String reply = result.getFulfillment().getSpeech();
                                 ChatMessage chatMessage = new ChatMessage(reply, "bot");
-                                ref.child("chat").child(UserIdFirebase).push().setValue(chatMessage);  //RESPONSE FROM DIALOGUEFLOW
+                                FirebaseDatabaseref.child("chat").child(UserIdFirebase).push().setValue(chatMessage);  //RESPONSE FROM DIALOGUEFLOW
                             }
                         }
                     }.execute(aiRequest);
@@ -227,9 +225,9 @@ public class MainActivity extends AppCompatActivity implements AIListener {
             }
         });
 
-
+//DISPLAYING USERS CHAT ON THE TEXT VIEWS
         //Change ref.child("chat")) to chat_userid to get users chat
-        adapter = new FirebaseRecyclerAdapter<ChatMessage, chat_rec>(ChatMessage.class, R.layout.msglist, chat_rec.class, ref.child("chat").child(UserIdFirebase)) {
+        adapter = new FirebaseRecyclerAdapter<ChatMessage, chat_rec>(ChatMessage.class, R.layout.msglist, chat_rec.class, FirebaseDatabaseref.child("chat").child(UserIdFirebase)) {
             @Override
             protected void populateViewHolder(chat_rec viewHolder, ChatMessage model, int position) { //POPULATING THE msglLIST xml file
 
@@ -403,7 +401,7 @@ public class MainActivity extends AppCompatActivity implements AIListener {
     private void callFirebaseStorageAndCloudSight(final Bitmap bitmap) throws IOException {
 
         // Do the real work in an async task, because we need to use the network anyway
-        new AsyncTask<Void, Void, Void>() {
+        new AsyncTask<Void, Void, String>() {
             ProgressDialog dialog;
 
             protected void onPreExecute() {
@@ -416,7 +414,7 @@ public class MainActivity extends AppCompatActivity implements AIListener {
             }
 
             @Override
-            protected Void doInBackground(Void... voids) {
+            protected String doInBackground(Void... voids) {
                 FirebaseStorage storage = FirebaseStorage.getInstance();
                 StorageReference storageReference = storage.getReference();
                 SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy-hh-mm-ss");
@@ -445,9 +443,15 @@ public class MainActivity extends AppCompatActivity implements AIListener {
                     public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
 
                         // taskSnapshot.getMetadata() contains file metadata such as size, content-type, and download URL.
-                        Uri downloadUrl = taskSnapshot.getDownloadUrl();
+                        String downloadUrl = taskSnapshot.getDownloadUrl().toString();
+
                         Toast.makeText(getApplicationContext(), "Image Uploaded " + downloadUrl, Toast.LENGTH_SHORT).show();
+
+                        ChatMessage chatMessage = new ChatMessage(downloadUrl, UserIdFirebase); //HERE CHANGE USER TO User.getUserName
+                        FirebaseDatabaseref.child("chat").child(UserIdFirebase).push().setValue(chatMessage);
+
                     }
+
 
 
                 });
@@ -455,7 +459,7 @@ public class MainActivity extends AppCompatActivity implements AIListener {
                 return null;
             }
 
-            protected void onPostExecute(Void result) {
+            protected void onPostExecute(String result) {
                 super.onPostExecute(result);
 
                 Log.d(TAG, "onPostExecute: POSTEXECUTE");
@@ -508,12 +512,12 @@ public class MainActivity extends AppCompatActivity implements AIListener {
 
         String message = result.getResolvedQuery();
         ChatMessage chatMessage0 = new ChatMessage(message, UserIdFirebase);
-        ref.child("chat").child(UserIdFirebase).push().setValue(chatMessage0);
+        FirebaseDatabaseref.child("chat").child(UserIdFirebase).push().setValue(chatMessage0);
 
 
         String reply = result.getFulfillment().getSpeech();
         ChatMessage chatMessage = new ChatMessage(reply, "bot");
-        ref.child("chat").child(UserIdFirebase).push().setValue(chatMessage);
+        FirebaseDatabaseref.child("chat").child(UserIdFirebase).push().setValue(chatMessage);
 
 
     }
